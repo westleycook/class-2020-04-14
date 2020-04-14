@@ -1,0 +1,136 @@
+---
+title: 'Chapter 13: Classification'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Thanks to Seaam Noor for some excellent work on this script.
+
+# There are two packges which you need to install.
+
+# install.packages("tidymodels")
+# install.packages("rpart.plot")
+
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(infer)
+library(skimr)
+library(gganimate)
+library(rpart.plot)
+library(tidymodels)
+library(tidyverse)
+
+nes <- read_rds("ch13_nes.rds")
+```
+
+# Before we start
+
+Here is the [chapter titled "Classification"](https://davidkane9.github.io/PPBDS/13-classification.html) that this class is based on. Over the previous two weeks, we have worked with dependent variables which are continuous. This week, we work with models for the case when the dependent variable is binary: success/yes (Y=1) or failure/no (Y=0). 
+
+
+# Scene 1
+
+The data has been taken from the National Election Survey. Note that both ideology and party are measured in 7 point scales. `ideology` ranges from Strong liberal (1) to Strong Conservative (7). `party` ranges from Strong Democrat (1) to Strong Republican (7). `income` is measured on a 5 point scale ranging from very poor (1) to very rich (5). You may treat these variables as continuous. `dvote`  is our outcome variable. It is whether (1) or not (0) the person prefers the Democratic candidate for President
+
+
+**Prompt:**
+
+Explore the data and see the variables for yourself. See if anything looks strange in the summary.
+
+Create a scatterplot of our outcome variable `dvote` and a continuous predictor `income`. 
+
+You might notice `geom_point()` doesn't give an intuitive graph since the points are so distinct. Try `geom_jitter()` instead. Use the arguments `alpha` and `height` to improve your plot.
+
+Draw a regression line through this jittered data using `geom_smooth()`.
+
+Discuss whether a linear regression is appropriate for this. Is there a possibility of model predicting greater than 1 or less than 0 probability for `dvote`?
+
+
+# Scene 2
+
+**Prompt:** Let's fit a logistic regression model in which `dvote` is the dependent variable and `gender` and `income` are the independent variables. Do not add an interaction term. Name the model `model_1`. As we’ll see, the syntax for running a logistic regression in R is very similar to that for running a linear regression. In fact, we’ll follow the same basic steps:
+
+We first fit the logistic regression model using the `glm(y ~ x1 + x2, family, data)` function and save it as `model_1`.  
+
+We get the regression parameter estimates by applying the `tidy()` function from the broom package to `model_1`. Print the `term`, `estimate`, `conf.low`, and `conf.high` columns.  
+
+Interpret the `estimate` column for "gendermale" and "income". Use the [divide-by-four rule](https://davidkane9.github.io/PPBDS/13-classification.html#one-categorical-explanatory-variable).
+
+Provide a Bayesian and a Frequentist interpretation of the confidence intervals for the estimate of the coefficient for `income`.
+
+Explain to your non-mathematical boss the relationship between income and preference for the Democratic candidate. Write this out as a sentence. Harder than it seems, isn't it?
+
+Optional (very hard!): Interpret the `estimate` for (Intercept). What does it mean? Think back to how we interpreted regression intercepts in the last two weeks. You *might* need to use the `qlogis()` function.
+
+
+
+
+# Scene 3
+
+**Prompt:** It's time to get some individual estimates from our model.
+
+Use `augment()` from the **broom** package to get predictions from our model. You will need to set the `type.predict` and `data` arguments correctly.
+
+What does the `.fitted` column means?
+
+Why does `.fitted` have the same value for every male with income = 3? (First, show that this is in fact true. Then explain why?)
+
+
+
+# Scene 4
+
+**Prompt:** Let’s use augment to make estimates for a voter with the mean value for income. What would our model estimate for a person with mean income and for both a male and female voter?
+
+Use the `newdata` argument in `augment` on `model_1` to make estimates for new data.
+
+Use `mutate` to create confidence intervals using `.fitted` and `2 * .se.fit`.
+
+Then use `ggplot` to plot the estimates with their confidence intervals. `geom_errorbar()` is a handy tool for that.
+
+
+
+# Scene 5
+
+**Prompt:** Now get the `estimate` for multiple bootstraps. We’ll do this using the following steps:
+
+1. Bootstrapping (use a reasonable number of samples)
+2. Nesting
+3. Use `map` to apply our model to bootstrap samples
+4. Use `tidy` to extract the regression results
+5. Then use `unnest` to have the regression results in output dataframe.
+6. Look at the output dataframe to see if you understand the structure of it.
+7. Save the output as `multiple_reg`
+
+
+
+# Scene 6
+
+**Prompt:**  Use the `multiple_reg` dataframe we got from bootstrapping to construct a percentile-based confidence interval
+
+
+
+# Scene 7
+
+With dependent variables, like `dvote`, which are 0/1, the linear regression has an obvious problem:  it might produce predicted probabilities below 0 and above 1. Since that is, by definition, impossible, we would prefer a different model. The logit function transforms variables from the space (0,1) (like probabilities) to (−∞,∞). Logistic regression uses the inverse of the function, the logistic function, and transforms variables from the space (−∞,∞) to (0,1).
+
+**Prompt:** When dealing with binary data, it is often helpful to construct an empirical logit plot instead of a regular scatterplot. See the *Primer* for [an example](https://davidkane9.github.io/PPBDS/13-classification.html#house-elections-exploratory-data-analysis). Do that and fit a line through the data. The steps for constructing such a plot are as follows:
+
+`group_by()` your explanatory variable, which is `income` in this case.
+
+`summarize()` the percentage of successes in your outcome variable.
+
+Calculate the empirical logit for each group by applying the `qlogis()` function to the percentage of successes in each group. The `qlogis()` function given an input `p` is essentially: log(p / (1 - p))
+
+Plot the results.
+
+Interpret the plot.
+
+
+
+
+# Challenge Problem 1
+
+**Prompt:** Replicate this graph: https://rpubs.com/Seeam2590/594856 
+
+
+
