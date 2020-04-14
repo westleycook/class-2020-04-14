@@ -1,0 +1,40 @@
+---
+title: 'Empirical Logit Plot: Voting for Democratic Presidential Candidates'
+author: "Westley Cook, Julia Englebert, Saul Soto, Rebecca Xi"
+date: "4/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(broom)
+library(infer)
+library(skimr)
+library(gganimate)
+library(rpart.plot)
+library(tidymodels)
+library(tidyverse)
+
+nes <- read_rds("ch13_nes.rds")
+```
+
+```{r plot, echo=FALSE}
+
+nes %>%
+  group_by(year, gender) %>%
+  summarize(perc_dvote = mean(dvote),
+            emplogit = qlogis(perc_dvote)) %>%
+  ggplot(aes(x = year, y = emplogit)) +
+  facet_wrap(~gender) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x = "Year",
+       y = "Empirical logits") +
+  theme_classic() +
+  labs(title = "Trends favoring Democrats by Gender",
+       subtitle = "Females are more likely to vote for Democrats",
+       caption = "Source: National Election Survey")
+
+```
+

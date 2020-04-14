@@ -45,6 +45,22 @@ Draw a regression line through this jittered data using `geom_smooth()`.
 
 Discuss whether a linear regression is appropriate for this. Is there a possibility of model predicting greater than 1 or less than 0 probability for `dvote`?
 
+```{r scene-1}
+
+glimpse(nes)
+
+sample_n(nes, size = 8)
+
+summary(nes)
+
+nes %>% 
+  ggplot(aes(income, dvote)) +
+  geom_point(position = position_jitter(height = .1), alpha = .1) +
+  geom_smooth(method = "lm")
+
+```
+
+
 
 # Scene 2
 
@@ -61,6 +77,30 @@ Provide a Bayesian and a Frequentist interpretation of the confidence intervals 
 Explain to your non-mathematical boss the relationship between income and preference for the Democratic candidate. Write this out as a sentence. Harder than it seems, isn't it?
 
 Optional (very hard!): Interpret the `estimate` for (Intercept). What does it mean? Think back to how we interpreted regression intercepts in the last two weeks. You *might* need to use the `qlogis()` function.
+
+```{r scene-2}
+
+model_1 <- glm(dvote ~ gender + income, data = nes, family = binomial)
+
+model_1 %>% 
+  tidy(conf.int = TRUE) %>% 
+  select(term, estimate, conf.low, conf.high)
+
+# estimate for gendermale: max probability decline we'd see for male instead of female is ~.04
+
+plogis(-0.1597261 + 0.7471462)
+
+# .643  this is the predicted probability for female (for 0 income)
+
+plogis(0.7471462)
+
+# .678  predicted probability for male (for 0 income)
+
+```
+
+```{r}
+-0.1597261 / 4
+```
 
 
 
@@ -133,6 +173,32 @@ Interpret the plot.
 # Challenge Problem 1
 
 **Prompt:** Replicate this graph: https://rpubs.com/Seeam2590/594856 
+
+group_by your continuous variable.
+summarize the percentage of successes in your outcome variable.
+Calculate the empirical logit for each group, using the logit function:  
+Plot the results.
+
+
+```{r challenge-problem}
+
+nes %>%
+  group_by(year, gender) %>%
+  summarize(perc_dvote = mean(dvote),
+            emplogit = qlogis(perc_dvote)) %>%
+  ggplot(aes(x = year, y = emplogit)) +
+  facet_wrap(~gender) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x = "Year",
+       y = "Empirical logits") +
+  theme_classic() +
+  labs(title = "Trends favoring Democrats by Gender",
+       subtitle = "Females are more likely to vote for Democrats",
+       caption = "Source: National Election Survey")
+  
+
+```
 
 
 
