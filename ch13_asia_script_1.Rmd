@@ -1,0 +1,137 @@
+---
+title: 'Chapter 13: Classification'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Thanks to Seaam Noor for some excellent work on this script.
+
+# There are two packges which you need to install.
+
+# install.packages("tidymodels")
+# install.packages("rpart.plot")
+
+knitr::opts_chunk$set(echo = TRUE)
+library(broom)
+library(infer)
+library(skimr)
+library(gganimate)
+library(rpart.plot)
+library(tidymodels)
+library(tidyverse)
+
+nes <- read_rds("ch13_nes.rds")
+```
+
+# Before we start
+
+Here is the [chapter titled "Classification"](https://davidkane9.github.io/PPBDS/13-classification.html) that this class is based on. Over the previous two weeks, we have worked with dependent variables which are continuous. This week, we work with models for the case when the dependent variable is binary: success/yes (Y=1) or failure/no (Y=0). 
+
+
+# Scene 1
+
+The data has been taken from the National Election Survey. Note that both ideology and party are measured in 7 point scales. `ideology` ranges from Strong liberal (1) to Strong Conservative (7). `party` ranges from Strong Democrat (1) to Strong Republican (7). `income` is measured on a 5 point scale ranging from very poor (1) to very rich (5). You may treat these variables as continuous. `dvote`  is our outcome variable. It is whether (1) or not (0) the person prefers the Democratic candidate for President
+
+
+**Prompt:**
+
+1. Explore the data and see the variables for yourself. See if anything looks strange in the summary.
+
+2. Create a scatterplot of our outcome variable `dvote` and a continuous predictor `ideology`. 
+
+3. You might notice `geom_point()` doesn't give an intuitive graph since the points are so distinct. Try `geom_jitter()` instead. Use the arguments `alpha` and `height` to improve your plot.
+
+4. Draw a regression line through the data using `geom_smooth()`.
+
+5. Discuss whether a linear regression is appropriate for this. Is there a possibility of model predicting greater than 1 or less than 0 probability for `dvote`?
+
+
+
+
+# Scene 2
+
+With dependent variables, like `dvote`, which are 0/1, the linear regression has an obvious problem:  it might produce predicted probabilities below 0 and above 1. Since that is, by definition, impossible, we would prefer a different model. The logit function transforms variables from the space (0,1) (like probabilities) to (−∞,∞). Logistic regression uses the inverse of the function, the logistic function, and transforms variables from the space (−∞,∞) to (0,1).
+
+**Prompt:** When dealing with binary data, it is often helpful to construct an empirical logit plot instead of a regular scatterplot. See the *Primer* for [an example](https://davidkane9.github.io/PPBDS/13-classification.html#house-elections-exploratory-data-analysis). Do that and fit a line through the data. The steps for constructing such a plot are as follows:
+
+1. `group_by()` your explanatory variable, which is `income` in this case.
+1. `summarize()` the percentage of successes in your outcome variable.
+1. Calculate the empirical logit for each group by applying the `qlogis()` function to the percentage of successes in each group. The `qlogis()` function given an input `p` is essentially: log(p / (1 - p))
+1. Plot the results.
+1. Interpret the plot.
+
+
+# Scene 3
+
+**Prompt:** Let's fit a logistic regression model using the categorical variable `gender` and `income` without interactions. Name the model `model_1`. As we’ll see, the syntax for running a logistic regression in R is very similar to that for running a linear regression. In fact, we’ll follow the same basic steps:
+
+1. We first `fit` the logistic regression model using the `glm(y ~ x1 + x2, family, data)` function and save it in `model_1`.  
+1. We get the regression parameter estimates by applying the `tidy()` function from the broom package to `model_1`. Print the `term`, `estimate`, `conf.low`, and `conf.high` columns.  
+1. Interpret the `estimate` column from the results. Use the [divide-by-four rule](https://davidkane9.github.io/PPBDS/13-classification.html#one-categorical-explanatory-variable).
+1. Provide a Bayesian and a Frequentist interpretation of the confidence intervals for the estimate of the coefficient for `income`.
+
+
+
+
+# Scene 4
+
+**Prompt:** It's time to get some predictions from our model.
+
+Use `augment()` from the **broom** package to get predictions from our model. You will need to set the `response` and `data` arguments correctly.
+
+What does the `.fitted` column means?
+
+Why does `.fitted` have the same value for every male with income = 3? (First, show that this is in fact true. Then explain why?)
+
+
+
+
+
+# Scene 5
+
+**Prompt:** Let’s use augment to make predictions for a voter with median income.
+
+1. What would our model predict for a student with median for both a male and female voter?
+2. Use the `newdata` argument in `augment` on `model_1` to make predictions for new data.
+3. use `mutate` to create confidence intervals using `.fitted` and `2 * .se.fit`.
+4. Then use `ggplot` to plot the predictions with their confidence intervals.
+
+
+
+# Scene 6
+
+**Prompt:** Now get the `estimate` for multiple samples. We’ll do this using the following steps:
+1. Bootstrapping (use a reasonable number of samples)
+2. Nesting
+3. Use `map` to apply our model to bootstrap samples
+4. Use `tidy` to extract the regression results
+5. Then use `unnest` to have the regression results in output dataframe.
+6. Look at the output dataframe to see if you understand the structure of it.
+7. Save the output as `multiple_reg`
+
+
+# Scene 7
+
+**Prompt:**  Use the `multiple_reg` dataframe we got from bootstrapping to construct a percentile-based confidence interval
+
+
+# Scene 8
+
+**Prompt:** We Remember the estimates from Scene 3? How do they relate to the predicted probabilities here in Scene 6 in `bootstrap_predictions`?
+
+For the model, the intercept was 0.747 (0 income and female). For males, it is 0.747 - (0.157) = 0.59 (0 income and male). For income = 1, it is 0.747 - (0.288) = 0.459. What is the substance meaning of 0.459?
+
+1. Use the `plogis` function to figure it out.
+2. Try to verify from the `bootstrap_predictions` if `plogis(estimate)` = respective predicted probability from results `boostrap_predictions`.
+3. Use `plogis` to get our model's prediction for `dvote` for `gender == male` and `income == 5`.
+4. Verify that it is indeed the prediction from `bootstrap_predictions`.
+5. use 'Divide by 4' rule to estimate the difference between model's predicted probability for female with income 1 and female with income 2.
+6. Use `plogis` to verify your estimate.
+
+
+
+
+# Challenge Problem 1
+
+**Prompt:** Replicate this graph: https://rpubs.com/Seeam2590/594856 
+
