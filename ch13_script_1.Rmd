@@ -87,6 +87,8 @@ Use `mutate` to create confidence intervals using `.fitted` and `2 * .se.fit`.
 
 Then use `ggplot` to plot the estimates with their confidence intervals. `geom_errorbar()` is a handy tool for that.
 
+(Optional!) Is this estimate a could forecast of what such a person would actually do? Probably not! An individual can't vote 0.52. You can only either do 0 or do 1. There is no 0.52 option. This highlights the difference between the endlying (and never observable, even in theory) probability of voting, which is on a 0 to 1 scale, and the actual vote, which is only 0 or 1, never in between. With that as background, what do you predict that these two people will do? How can you get R to show this prediction? 
+
 
 
 # Scene 5
